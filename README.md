@@ -16,6 +16,6 @@ Ordinary image and video compression methods usually have a limited compression 
 	thumbnail [Options] FILE1 [FILE2, ...]
 
 ### Options
-`-i`) replace FILES in place
-`-r R`) resize R% (default: R=70)
-`-o F`) write output to file F; exit after first input file
+`-i`) replace FILES in place  
+`-r R`) resize R% (default: R=70)  
+`-o F`) write output to file F; exit after first input file  
