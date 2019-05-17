@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+
+if [ "$#" -eq 0 ] || [ "$1" = "-?" ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+	cat << EOF
+Usage: ${0##*/} [Options] FILE1 [FILE2, ...]
+Resize input image or video files. By default write F.ext to F_tn.ext.
+
+Options:
+-i) replace FILES in place
+-r R) resize R% (default: R=70)
+-o F) write output to file F; exit after first input file
+EOF
+	exit
+fi
+
+# default resize factor
+resize="70%"
+
+inplace=F
+while getopts "ir:o:" OPTION; do
+	case $OPTION in
+		i) inplace=T ;;
+		r) resize="$OPTARG"% ;;
+		o) output="$OPTARG" ;;
+		*) echo wrong option; exit 1 ;;
+	esac
+	if [ $OPTIND -gt 1 ]; then shift $((OPTIND - 1)); OPTIND=1; fi
+done
+
+# loop through input files
+while [ $# -gt 0 ]; do
+	input="$1"
+	ext="${1##*.}"
+
+	# set output file
+	if [ -z "$output" ]; then
+		if [ "$inplace" = T ]; then
+			output="$1"
+		else
+			output="${input%.*}"_tn."$ext"
+		fi
+	else
+		if [ $# -ne 1 ]; then
+			echo "only one input file when output file is specified" 1>&2
+			exit 1
+		fi
+	fi
+
+	# resize
+	if [[ "$ext" =~ (mp4|webm|flv|avi|wmv|mov) ]]; then
+		# resize video file
+
+		if [ "$inplace" = T ]; then
+			output_fin="$output"
+			output="$output.$RANDOM.$ext"
+		fi
+		resize="$(echo "$resize" | sed 's/%/*0.01/' | bc)"
+		fps="$(ffmpeg -i "$input" 2>&1 | grep Video: | sed 's/^.*, \([0-9.]*\) fps.*$/\1/')"
+
+		if [[ ! $fps =~ ^[0-9]+\.?[0-9]*$ ]]; then
+			echo "cannot detect frames per second of file $input" 1>&2
+			exit 1
+		fi
+		abr="$(ffmpeg -i "$input" 2>&1 | grep Audio: | sed 's/^.*, \([0-9.]*\) kb\/s.*$/\1/')"
+		if [[ ! $abr =~ ^[0-9]+\.?[0-9]*$ ]]; then
+			echo "cannot detect audio bitrate of file $input" 1>&2
+			exit 1
+		fi
+		# extract 150 frames to get vbr
+		ffmpeg -i "$input" -vf scale="trunc(iw*$resize/2)*2:-2" -an -vframes 150 "$output"
+		vbr="$(ffmpeg -i "$output" 2>&1 | grep Video: | sed 's/^.*, \([0-9.]*\) kb\/s.*$/\1/')"
+		if [[ ! $vbr =~ ^[0-9]+\.?[0-9]*$ ]]; then
+			echo "cannot detect video bitrate of file $input" 1>&2
+			exit 1
+		fi
+
+		rm "$output"
+
+		# modify vbr, abr, fps to reduce video size
+		vbr="$(bc <<< "scale=0; $vbr*$resize*1000/1")"
+		abr="$(bc <<< "scale=0; $abr*$resize*1000/1")"
+		fps="$(bc <<< "scale=0; $fps*(1-(1-$resize)*0.5)/1")"
+		# create output file
+		ffmpeg -i "$input" -vf scale="trunc(iw*$resize/2)*2:-2" -r "$fps" -b:v "$vbr" -b:a "$abr" "$output"
+
+		if [ "$inplace" = T ]; then
+			mv "$output" "$output_fin"
+		fi
+	else
+		# resize image file
+
+		gm convert "$input" -resize "$resize" "$output"
+	fi
+
+	output=''
+	shift 1
+done
