@@ -69,8 +69,9 @@ check_deps() {
 inst() {
 	# install bash script, man file and bash completion
 	install -D "thumbnail" "$PREFIX2/usr/local/bin/thumbnail"
-	if [ -f "thumbnail.1.gz" ]; then
-		install -D -m 0644 "thumbnail.1.gz" "$PREFIX2/usr/local/man/man1/thumbnail.1.gz"
+	if [ -f "thumbnail.1" ]; then
+		install -D -m 0644 "thumbnail.1" "$PREFIX2/usr/local/man/man1/thumbnail.1"
+		gzip -f "$PREFIX2/usr/local/man/man1/thumbnail.1"
 		_prep_man
 	fi
 	if [ -f "completion" ]; then

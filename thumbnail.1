@@ -1,0 +1,50 @@
+.TH thumbnail 1 "29 Jun 2020" "v1.0" "User commands"
+.SH NAME
+thumbnail \- agressively compress images and videos
+.P
+.SH SYNOPSIS
+\fBthumbnail\fR [\fIOPTION\fI] \fIFILE1\fR [\fIFILE2\fR, ...]
+.P
+.SH DESCRIPTION
+Resize image and/or video files. For video files adjust also frame rate and audio and video bit rate. By default, write output for FILE.EXT to FILE_tn.EXT 
+.P
+.SH OPTIONS
+.TP
+\fB\-i\fR     
+replace \fIFILEs\fR in place   
+.TP
+\fB\-r\fR \fIR\fR   
+resize \fIFILEs\fR by \fIR\fR% (default: \fIR\fR=70)  
+.TP
+\fB\-o\fR \fIF\fR   
+write output to file \fIF\fR; exit after first input file 
+.P
+.SH ARGUMENTS
+\fIFILE\fR is an image file recognized by GraphicsMagick or a video file recognized by ffmpeg.
+.P
+.SH EXAMPLES
+.IP \[bu] 3
+Resize img.jpg at the default rate and write output to img_tn.jpg:
+.P
+
+.P
+.RS 6
+thumbnail img.jpg
+.RE
+
+.IP \[bu]
+Replace vid.mpg by a version resized at rate 50%:
+.P
+
+.P
+.RS 6
+thumbnail \-ir50 vid.mpg
+.RE
+.SH SEE ALSO
+gm(1), ffmpeg(1)
+.P
+.SH BUGS
+Bugs and suggestions should be reported at: https://github.com/bashdroid/thumbnail/issues
+
+.SH AUTHOR
+https://github.com/bashdroid
