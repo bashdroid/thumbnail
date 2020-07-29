@@ -12,7 +12,7 @@ EOF
 fi
 
 # default resize factor
-resize="70%"
+resize="75%"
 
 inplace=F
 while getopts "ir:o:" OPTION; do
