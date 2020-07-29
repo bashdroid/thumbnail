@@ -11,7 +11,7 @@ Resize image and/or video files. For video files adjust also frame rate and audi
 
 If you don't need a manual, you may just download and run `thumbnail` with your preferred tools, e.g.:  
 
-	curl -LO https://github.com/bashdroid/thumbnail/blob/master/thumbnail  
+	curl -LO https://raw.githubusercontent.com/bashdroid/thumbnail/master/thumbnail  
 	chmod u+x thumbnail
 
 ## Dependencies
