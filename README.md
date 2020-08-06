@@ -9,6 +9,8 @@ Resize image and/or video files. For video files adjust also frame rate and audi
 	cd thumbnail-master  
 	make install  
 
+Depending on your system, you might need to run "make install" as root.  
+
 If you don't need a manual, you may just download and run `thumbnail` with your preferred tools, e.g.:  
 
 	curl -LO https://raw.githubusercontent.com/bashdroid/thumbnail/master/thumbnail  

@@ -5,7 +5,7 @@
 # -u uninstall
 # -d test dependencies
 
-bashrc="$HOME/bashrc"
+bashrc="$HOME/.bashrc"
 
 # Termux puts include/ share/ src/ on top level, directly below $PREFIX. To remedy this, we use $PREFIX2 (as specified below) for all subfolders of usr/ and $PREFIX1 for etc/ ...
 PREFIX1="$PREFIX"
@@ -19,33 +19,47 @@ _warn() {
 	echo >&2 ":: $*"
 }
 
-_prep_man() {
-	# extend manpath via man.conf
-	if ! grep -qs "$PREFIX2/usr/local/man" "$PREFIX1/etc/man.conf"; then
-		if ! [ -s "$PREFIX1/etc/man.conf" ]; then
-			cat - >> "$PREFIX1/etc/man.conf" << EOF
+cmd_exists() {
+	which "$1" &>/dev/null || busybox which "$1" &>/dev/null
+}
+
+prep_man() {
+	if cmd_exists makewhatis; then
+		if [ -f "$PREFIX1/etc/man.conf" ]; then
+			# extend manpath via man.conf
+			if ! grep -qs "$PREFIX2/usr/local/man" "$PREFIX1/etc/man.conf"; then
+				if ! [ -s "$PREFIX1/etc/man.conf" ]; then
+					cat - >> "$PREFIX1/etc/man.conf" << EOF
 manpath $PREFIX2/usr/share/man
 manpath $PREFIX2/usr/X11R6/man
 EOF
-		fi
-		cat - >> "$PREFIX1/etc/man.conf" << EOF
+				fi # -s man.conf
+				cat - >> "$PREFIX1/etc/man.conf" << EOF
 manpath $PREFIX2/usr/local/man
 EOF
-	fi
+			fi # grep
+		fi # -f man.conf
 
-	# update man db
-	makewhatis
-}
-
-_prep_completion() {
-	# add argument completion
-	if ! grep -q "$PREFIX2/usr/local/bash-completion/completions/*" "$bashrc"; then
-		echo 'for f in $PREFIX2/usr/local/bash-completion/completions/*; do [[ -f "$f" ]] && source "$f"; done' >> "$bashrc"
+		# update man db
+		makewhatis
+	elif cmd_exists mandb; then
+		# update man db
+		mandb
 	fi
 
 	# add man completion (add $PREFIX2/usr/local/man to bash completion)
-	if [ -f "$PREFIX2/usr/share/bash-completion/completions/man" ]; then
-		sed -i 's|local manpath="'"$PREFIX2"'/usr/share/man"|local manpath="'"$PREFIX2"'/usr/share/man:'"$PREFIX2"'/usr/local/man"|' "$PREFIX2/usr/share/bash-completion/completions/man"
+	man_compl="$PREFIX2/usr/share/bash-completion/completions/man"
+	manpath_old="local manpath=\"$PREFIX2/usr/share/man\""
+	manpath_new="${manpath_old:0: -1}:$PREFIX2/usr/local/man\""
+	if grep -qs "^\(\s*\)$manpath_old\s*$" "$man_compl"; then
+		sed -i "s|^\(\s*\)$manpath_old\s*$|\1$manpath_new|" "$man_compl"
+	fi
+}
+
+prep_completion() {
+	# add argument completion
+	if ! grep -q "$PREFIX2/usr/local/bash-completion/completions/*" "$bashrc"; then
+		echo 'for f in $PREFIX2/usr/local/bash-completion/completions/*; do [[ -f "$f" ]] && source "$f"; done' >> "$bashrc"
 	fi
 }
 
@@ -59,7 +73,7 @@ check_deps() {
 	(
 		IFS=,
 		while read cmd dep; do
-			if ( ! which "$cmd" &>/dev/null ) && ( ! busybox which "$cmd" &>/dev/null ); then
+			if ! cmd_exists "$cmd"; then
 				_warn "WARNING! $dep is not installed!"
 			fi
 		done < prep/install.deps.csv
@@ -72,11 +86,11 @@ inst() {
 	if [ -f "thumbnail.1" ]; then
 		install -D -m 0644 "thumbnail.1" "$PREFIX2/usr/local/man/man1/thumbnail.1"
 		gzip -f "$PREFIX2/usr/local/man/man1/thumbnail.1"
-		_prep_man
+		prep_man
 	fi
 	if [ -f "completion" ]; then
 		install -D -m 0644 "completion" "$PREFIX2/usr/local/bash-completion/completions/thumbnail"
-		_prep_completion
+		prep_completion
 	fi
 }
 

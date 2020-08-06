@@ -3,23 +3,6 @@
 # Tool for generating documentation files: man, help, README.md
 # Usage: makedoc.sh [man|help|readme] 
 
-name="${PWD##*/}"
-
-doc_type="$1"
-meta_file="prep/$name.meta"
-
-declare -A item_var=(\
-	[name]="$name" \
-	[meta_date]="$(date -r "$meta_file" '+%d %b %Y')")
-
-declare -A tmpl_file=(\
-	[man]="prep/$name.1" \
-	[help]="prep/$name" \
-	[readme]="prep/README.md")
-	# content of $tmpl_file goes to $output (cf. makedoc.items.sh)
-
-source prep/makedoc.items.sh
-
 _warn() {
 	echo >&2 ":: $*"
 }
@@ -140,7 +123,7 @@ get_meta() {
 
 		# custom macros
 		s/\@u (.)/\U\1/g
-		s/\@t /\\\&nbsp;\\\&nbsp;/g
+		s/\@t /\&nbsp;\&nbsp;/g
 		s/^\@p //
 		s/^\@s /##### /'
 			;;
@@ -149,11 +132,18 @@ get_meta() {
 	sed -E -e '
 		# lines from item $1 to next item
 		'"/^$1/,/^\S/!d"'
+
 		# delete item line
 		//d
+
 		# delete initial tab
 		s/^\t//
-		'"$sedcmd" "$meta_file" | \
+		'"$sedcmd"'
+
+		# escape & and \& to avoid interpretation as backreference by gawk
+		s/\\\&/\\\\\&/g
+		s/\&/\\\&/g
+		' "$meta_file" | \
 		`# remove trailing lines with spaces only` \
 		sed -e ':a;/^[ \n]*$/{$d;N;};/\n *$/ba' | \
 		`# remove trailing spaces in last line` \
@@ -163,13 +153,31 @@ get_meta() {
 }
 
 main() {
+	doc_type="$1"
+	name="${PWD##*/}"
+	meta_file="prep/$name.meta"
+
+	declare -A item_var=(\
+		[name]="$name" \
+		[meta_date]="$(date -r "$meta_file" '+%d %b %Y')")
+
+	declare -A tmpl_file=(\
+		[man]="prep/$name.1" \
+		[help]="prep/$name" \
+		[readme]="prep/README.md")
+		# content of $tmpl_file goes to $output (cf. makedoc.items.sh)
+	
+	[[ ! $doc_type =~ (man|help|readme) ]] && _die "wrong doc_type"
+
+	source prep/makedoc.items.sh
+
 	for item in "${repl_items[@]}"; do
 		if [ -n "${item_var[$item]}" ]; then
 			# replace <$item> by ${item_var[$item]} 
 			output="$(sed -e 's/<'"$item"'>/'"${item_var[$item]}"'/g' <(echo "$output"))"
 		else
 			# replace <$item> by section $item in $meta_file; cf. https://stackoverflow.com/questions/27361981/sed-replace-pattern-with-file-contents
-			tmp="$(awk 'FNR==NR{s=(!s)?$0:s RS $0;next} /<'"$item"'>/{sub(/<'"$item"'>/, s)} 1' <(get_meta "$item") <(echo "$output"))"
+			tmp="$(gawk 'FNR==NR{s=(!s)?$0:s RS $0;next} /<'"$item"'>/{sub(/<'"$item"'>/, s)} 1' <(get_meta "$item") <(echo "$output"))"
 			if [ -n "$tmp" ]; then
 				output="$tmp"
 			fi
@@ -178,4 +186,4 @@ main() {
 	echo "$output"
 }
 
-main
+main "$1"
