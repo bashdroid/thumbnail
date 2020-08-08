@@ -1,5 +1,5 @@
 # thumbnail
-**Agressively compress images and videos**
+**Aggressively compress images and videos**
 
 Resize image and/or video files. For video files adjust also frame rate and audio and video bit rate. By default, write output for `FILE.EXT` to `FILE_tn.EXT`
 

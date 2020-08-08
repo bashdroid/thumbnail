@@ -5,7 +5,7 @@
 if [ "$#" -eq 0 ] || [ "$1" = "-?" ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 	cat << EOF
 Usage: thumbnail [OPTION] FILE1 [FILE2, ...]
-Agressively compress images and videos
+Aggressively compress images and videos
 
 Options:
 	-i     	replace FILEs in place   

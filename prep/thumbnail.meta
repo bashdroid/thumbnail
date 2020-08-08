@@ -1,5 +1,5 @@
 short_descr
-	@u Agressively compress images and videos
+	@u Aggressively compress images and videos
 
 description
 	Resize image and/or video files. For video files adjust also frame rate and audio and video bit rate. By default, write output for `FILE.EXT` to `FILE_tn.EXT` 
