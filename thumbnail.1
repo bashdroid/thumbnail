@@ -1,10 +1,12 @@
-.TH thumbnail 1 "08 Aug 2020" "v1.0" "User commands"
+.TH thumbnail 1 "11 Aug 2020" "v1.0" "User commands"
 .SH NAME
 thumbnail \- aggressively compress images and videos
 .P
 .SH SYNOPSIS
+.nf
 \fBthumbnail\fR [\fIOPTION\fI] \fIFILE1\fR [\fIFILE2\fR, ...]
 .P
+.fi
 .SH DESCRIPTION
 Resize image and/or video files. For video files adjust also frame rate and audio and video bit rate. By default, write output for FILE.EXT to FILE_tn.EXT 
 .P
@@ -40,11 +42,8 @@ Replace vid.mpg by a version resized at rate 50%:
 .RS 6
 thumbnail \-ir50 vid.mpg
 .RE
+.SH REPORTING BUGS
+Bugs and suggestions should be reported at: https://github.com/bashdroid/thumbnail/issues
 .SH SEE ALSO
 gm(1), ffmpeg(1)
 .P
-.SH BUGS
-Bugs and suggestions should be reported at: https://github.com/bashdroid/thumbnail/issues
-
-.SH AUTHOR
-https://github.com/bashdroid
