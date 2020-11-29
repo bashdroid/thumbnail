@@ -9,20 +9,20 @@ Aggressively compress images and videos
 
 Options:
 	-i     	replace FILEs in place   
-	-r R   	resize FILEs by R% (default: R=70)  
+	-r R   	resize FILEs by R% (default: R=75)
 	-o F   	write output to file F; exit after first input file 
 EOF
 	exit
 fi
 
 # default resize factor
-resize="75%"
+resize="75"
 
 inplace=F
 while getopts "ir:o:" OPTION; do
 	case $OPTION in
 		i) inplace=T ;;
-		r) resize="$OPTARG"% ;;
+		r) resize="$OPTARG" ;;
 		o) output="$OPTARG" ;;
 		*) echo wrong option; exit 1 ;;
 	esac
@@ -56,21 +56,22 @@ while [ $# -gt 0 ]; do
 			output_fin="$output"
 			output="$output.$RANDOM.$ext"
 		fi
-		resize="$(echo "$resize" | sed 's/%/*0.01/' | bc)"
-		fps="$(ffmpeg -i "$input" 2>&1 | grep Video: | sed 's/^.*, \([0-9.]*\) fps.*$/\1/')"
+		fps="$(ffmpeg -nostdin -i "$input" 2>&1 | grep 'Video:' | sed -e 's/^.*, \([0-9.]*\) fps.*$/\1/')"
 
 		if [[ ! $fps =~ ^[0-9]+\.?[0-9]*$ ]]; then
 			echo "cannot detect frames per second of file $input" 1>&2
 			exit 1
 		fi
-		abr="$(ffmpeg -i "$input" 2>&1 | grep Audio: | sed 's/^.*, \([0-9.]*\) kb\/s.*$/\1/')"
+		abr="$(ffmpeg -nostdin -i "$input" 2>&1 | grep 'Audio:' | sed -e 's/^.*, \([0-9.]*\) kb\/s.*$/\1/')"
 		if [[ ! $abr =~ ^[0-9]+\.?[0-9]*$ ]]; then
 			echo "cannot detect audio bitrate of file $input" 1>&2
 			exit 1
 		fi
 		# extract 150 frames to get vbr
-		ffmpeg -i "$input" -vf scale="trunc(iw*$resize/2)*2:-2" -an -vframes 150 "$output"
-		vbr="$(ffmpeg -i "$output" 2>&1 | grep Video: | sed 's/^.*, \([0-9.]*\) kb\/s.*$/\1/')"
+		ffmpeg -nostdin -hide_banner -loglevel warning -i "$input" -vf scale="trunc(iw*$resize/200)*2:-2" -an -vframes 150 "$output"
+		# make ow even int: trunc(x/2)*2
+		# keep aspect ratio, make oh even int: ow:-2
+		vbr="$(ffmpeg -nostdin -i "$output" 2>&1 | grep Video: | sed 's/^.*, \([0-9.]*\) kb\/s.*$/\1/')"
 		if [[ ! $vbr =~ ^[0-9]+\.?[0-9]*$ ]]; then
 			echo "cannot detect video bitrate of file $input" 1>&2
 			exit 1
@@ -79,19 +80,18 @@ while [ $# -gt 0 ]; do
 		rm "$output"
 
 		# modify vbr, abr, fps to reduce video size
-		vbr="$(bc <<< "scale=0; $vbr*$resize*1000/1")"
-		abr="$(bc <<< "scale=0; $abr*$resize*1000/1")"
-		fps="$(bc <<< "scale=0; $fps*(1-(1-$resize)*0.5)/1")"
+		vbr="$(bc <<< "scale=0; $vbr*$resize*10/1")"
+		abr="$(bc <<< "scale=0; $abr*$resize*10/1")"
+		fps="$(bc <<< "scale=0; $fps*(1-(1-$resize*0.01)*0.5)/1")"
 		# create output file
-		ffmpeg -i "$input" -vf scale="trunc(iw*$resize/2)*2:-2" -r "$fps" -b:v "$vbr" -b:a "$abr" "$output"
+		ffmpeg -nostdin -hide_banner -loglevel warning -i "$input" -vf scale="trunc(iw*$resize/200)*2:-2" -r "$fps" -b:v "$vbr" -b:a "$abr" "$output"
 
 		if [ "$inplace" = T ]; then
 			mv "$output" "$output_fin"
 		fi
 	else
 		# resize image file
-
-		gm convert "$input" -resize "$resize" "$output"
+		gm convert "$input" -resize "$resize%" "$output"
 	fi
 
 	output=''

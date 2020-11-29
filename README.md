@@ -29,7 +29,7 @@ Ordinary image and video compression methods usually have a limited compression 
 
 ### Options
 **-i**     &nbsp;&nbsp;replace *FILEs* in place  
-**-r** *R*   &nbsp;&nbsp;resize *FILEs* by *R*% (default: *R*=70)  
+**-r** *R*   &nbsp;&nbsp;resize *FILEs* by *R*% (default: *R*=75)  
 **-o** *F*   &nbsp;&nbsp;write output to file *F*; exit after first input file
 
 ### Arguments
